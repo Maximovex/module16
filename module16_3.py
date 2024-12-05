@@ -15,7 +15,7 @@ async def get_users():
 async def add_user(username: Annotated[str, Path(min_length=5, max_length=15,
                                                  description='Enter your username', examples=['andrew'])],
                    age: Annotated[int, Path(ge=18, le=120, description='Enter your age', examples=['20'])]):
-    current_index = len(users) + 1
+    current_index = max(int(id) for id in users.keys()) + 1
     users[current_index] = f'Имя:{username}, возраст: {age}'
     return f'User id: {current_index} is registered.'
 
