@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Path, HTTPException, Request
+from fastapi import FastAPI, Path, HTTPException, Request, Form
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from typing import Annotated, List
 from pydantic import BaseModel
 
-app = FastAPI(swagger_ui_parameters={'tryItOutEnabled': True}, debug=True)
+appi = FastAPI(swagger_ui_parameters={'tryItOutEnabled': True}, debug=True)
 templates = Jinja2Templates(directory='templates')
 
 
@@ -17,12 +17,12 @@ class User(BaseModel):
 users = []
 
 
-@app.get('/', response_class=HTMLResponse)
+@appi.get('/', response_class=HTMLResponse)
 async def get_users(request: Request):
     return templates.TemplateResponse('users.html', {'request': request, 'users': users})
 
 
-@app.get('/user/{userid}', response_class=HTMLResponse)
+@appi.get('/user/{userid}', response_class=HTMLResponse)
 async def get_user(request: Request,
                    userid: Annotated[int, Path(ge=1, le=100, description='Enter user id', examples=['10'])]):
     for i, user in enumerate(users):
@@ -33,17 +33,14 @@ async def get_user(request: Request,
 
 
 
-@app.post('/user/{username}/{age}')
-async def add_user(username: Annotated[str, Path(min_length=5, max_length=15,
-                                                 description='Enter your username', examples=['andrew'])],
-                   age: Annotated[int, Path(ge=18, le=120, description='Enter your age', examples=['20'])]):
-    current_index = max(user.user_id for user in users) + 1 if users else 1
-    user = User(user_id=current_index, username=username, age=age)
-    users.append(user)
-    return f'Пользователь id = {user.user_id} добавлен.'
+@appi.post('/')
+async def add_user(request:Request,username:str=Form(),age:int=Form()):
+    userid=len(users)+1 if users else 1
+    users.append(User(user_id=userid,username=username,age=age))
+    return templates.TemplateResponse('users.html', {'request': request, 'users': users})
 
 
-@app.put('/user/{userid}/{username}/{age}')
+@appi.put('/user/{userid}/{username}/{age}')
 async def update_user(userid: Annotated[int, Path(ge=1, le=100, description='Enter user id', examples=['10'])],
                       username: Annotated[str, Path(min_length=5, max_length=15, description='Enter your username',
                                                     examples=['andrew'])],
@@ -56,7 +53,7 @@ async def update_user(userid: Annotated[int, Path(ge=1, le=100, description='Ent
     raise HTTPException(status_code=404, detail="User was not found")
 
 
-@app.delete('/user/{userid}')
+@appi.delete('/user/{userid}')
 async def delete_user(userid: Annotated[int, Path(ge=1, le=100, description='Enter user id', examples=['10'])]):
     for i, u in enumerate(users):
         if u.user_id == int(userid):
